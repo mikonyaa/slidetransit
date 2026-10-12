@@ -1,0 +1,262 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mikonyaa.github.io/slidetransit/schemas/manifest-1.0.json",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "mode": {
+      "enum": [
+        "declared-same-source",
+        "documented-test-variant",
+        "unknown"
+      ]
+    },
+    "presentation": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    },
+    "reference": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "source": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          },
+          "required": [
+            "sha256"
+          ],
+          "additionalProperties": false
+        },
+        "renderer": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "name",
+            "version"
+          ],
+          "additionalProperties": false
+        },
+        "provenanceAssurance": {
+          "enum": [
+            "user-declared",
+            "captured-by-fixture-script",
+            "unknown"
+          ]
+        },
+        "exportOptions": {
+          "type": "object"
+        },
+        "environment": {
+          "type": "object"
+        },
+        "capturedAt": {
+          "type": "string"
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "path",
+        "renderer",
+        "provenanceAssurance",
+        "exportOptions",
+        "environment"
+      ],
+      "additionalProperties": false
+    },
+    "candidate": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "source": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string"
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            }
+          },
+          "required": [
+            "sha256"
+          ],
+          "additionalProperties": false
+        },
+        "renderer": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "name",
+            "version"
+          ],
+          "additionalProperties": false
+        },
+        "provenanceAssurance": {
+          "enum": [
+            "user-declared",
+            "captured-by-fixture-script",
+            "unknown"
+          ]
+        },
+        "exportOptions": {
+          "type": "object"
+        },
+        "environment": {
+          "type": "object"
+        },
+        "capturedAt": {
+          "type": "string"
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "path",
+        "renderer",
+        "provenanceAssurance",
+        "exportOptions",
+        "environment"
+      ],
+      "additionalProperties": false
+    },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "slideRange": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "pageOrder": {
+          "const": "source-order"
+        },
+        "kind": {
+          "const": "slides"
+        },
+        "includeHidden": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "slideRange",
+        "pageOrder",
+        "kind",
+        "includeHidden"
+      ],
+      "additionalProperties": false
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "config": {
+      "type": "object",
+      "properties": {
+        "dpi": {
+          "type": "integer",
+          "minimum": 36,
+          "maximum": 200
+        },
+        "pixel_delta": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 254
+        },
+        "displacement_pt": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 72
+        },
+        "size_pt": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 72
+        },
+        "fail_on": {
+          "enum": [
+            "info",
+            "low",
+            "medium",
+            "high"
+          ]
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "mode",
+    "presentation",
+    "reference",
+    "candidate",
+    "scope",
+    "limitations"
+  ],
+  "additionalProperties": false
+}

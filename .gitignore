@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
+work/
+.DS_Store
+site/
+demo-output/
+sample/
+report/
+reviewed/

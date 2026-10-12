@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "1.0",
+  "presentation": {
+    "path": "baseline.pptx",
+    "sha256": "473df64894503c7d8567d50e416b18d6dda397e3a0ed7c7c9242e63f6813b341"
+  },
+  "mode": "documented-test-variant",
+  "reference": {
+    "path": "baseline.pdf",
+    "renderer": {
+      "name": "LibreOfficeDev",
+      "version": "LibreOfficeDev 26.8.0.0.alpha0 2c87e51eeaa2b413ff4ae097b2705eea1995d8e5"
+    },
+    "source": {
+      "path": "baseline.pptx",
+      "sha256": "473df64894503c7d8567d50e416b18d6dda397e3a0ed7c7c9242e63f6813b341"
+    },
+    "sha256": "b85e556021337492e5eb92478b979f20856e9cfd78e78a2be5a8a6d23e9a3d6f",
+    "provenanceAssurance": "captured-by-fixture-script",
+    "exportOptions": {
+      "filter": "impress_pdf_Export",
+      "headless": true
+    },
+    "environment": {
+      "os": "Darwin",
+      "osVersion": "26.7.1",
+      "architecture": "arm64",
+      "python": "3.13.7"
+    },
+    "capturedAt": "2026-10-12T18:12:46.312921+00:00",
+    "command": [
+      "soffice",
+      "-env:UserInstallation=file://<isolated-task-profile>",
+      "--headless",
+      "--convert-to",
+      "pdf:impress_pdf_Export",
+      "--outdir",
+      ".",
+      "baseline.pptx"
+    ]
+  },
+  "candidate": {
+    "path": "duplicate.pdf",
+    "renderer": {
+      "name": "LibreOfficeDev",
+      "version": "LibreOfficeDev 26.8.0.0.alpha0 2c87e51eeaa2b413ff4ae097b2705eea1995d8e5"
+    },
+    "source": {
+      "path": "duplicate.pptx",
+      "sha256": "3d6b3597ac801fd66bb9d130dda4f4518f8f2668a18559c84a5de119f7d00c4d"
+    },
+    "sha256": "b62b14f3f5685ce4e782beef43868a0c512108d84b2e6ce2dd40217ef58cdd69",
+    "provenanceAssurance": "captured-by-fixture-script",
+    "exportOptions": {
+      "filter": "impress_pdf_Export",
+      "headless": true
+    },
+    "environment": {
+      "os": "Darwin",
+      "osVersion": "26.7.1",
+      "architecture": "arm64",
+      "python": "3.13.7"
+    },
+    "capturedAt": "2026-10-12T18:12:52.997012+00:00",
+    "command": [
+      "soffice",
+      "-env:UserInstallation=file://<isolated-task-profile>",
+      "--headless",
+      "--convert-to",
+      "pdf:impress_pdf_Export",
+      "--outdir",
+      ".",
+      "duplicate.pptx"
+    ]
+  },
+  "scope": {
+    "slideRange": [
+      1,
+      2
+    ],
+    "pageOrder": "source-order",
+    "kind": "slides",
+    "includeHidden": false
+  },
+  "limitations": [
+    "Own test variant; no cross-exporter regression claim.",
+    "Fixture exporter is an explicitly identified development build."
+  ]
+}

@@ -1,0 +1,8 @@
+* text=auto eol=lf
+*.pdf binary
+*.pptx binary
+*.png binary
+*.gif binary
+*.ttf binary
+# Preserve upstream legal notices verbatim, including their original whitespace.
+src/slidetransit/licenses/** whitespace=-blank-at-eol,-blank-at-eof

@@ -1,0 +1,262 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mikonyaa.github.io/slidetransit/schemas/report-1.0.json",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "tool": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "const": "SlideTransit"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ],
+      "additionalProperties": false
+    },
+    "comparisonId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "presentation": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "reference": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "candidate": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "presentation",
+        "reference",
+        "candidate"
+      ],
+      "additionalProperties": false
+    },
+    "rules": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "implementationHash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "parameters": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "version",
+        "hash",
+        "implementationHash",
+        "parameters"
+      ],
+      "additionalProperties": false
+    },
+    "renderer": {
+      "type": "object"
+    },
+    "config": {
+      "type": "object"
+    },
+    "provenance": {
+      "type": "object"
+    },
+    "coordinates": {
+      "type": "string"
+    },
+    "analysisStatus": {
+      "enum": [
+        "complete",
+        "incomplete",
+        "error"
+      ]
+    },
+    "coverage": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object"
+      }
+    },
+    "pages": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object"
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{24}$"
+          },
+          "regionHash": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "ruleId": {
+            "type": "string"
+          },
+          "ruleVersion": {
+            "type": "string"
+          },
+          "page": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1
+          },
+          "severity": {
+            "enum": [
+              "info",
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "object"
+          },
+          "referenceBBox": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 4,
+                "maxItems": 4
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "candidateBBox": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 4,
+                "maxItems": 4
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cropReferences": {
+            "type": "object",
+            "properties": {
+              "reference": {
+                "type": "string"
+              },
+              "candidate": {
+                "type": "string"
+              }
+            },
+            "required": [],
+            "additionalProperties": false
+          },
+          "attribution": {
+            "type": "object"
+          },
+          "reviewState": {
+            "enum": [
+              "open",
+              "accepted",
+              "region-accepted"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "regionHash",
+          "ruleId",
+          "ruleVersion",
+          "page",
+          "severity",
+          "title",
+          "evidence",
+          "referenceBBox",
+          "candidateBBox",
+          "cropReferences",
+          "attribution",
+          "reviewState"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "limits": {
+      "type": "object"
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "summary": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "tool",
+    "comparisonId",
+    "inputs",
+    "rules",
+    "renderer",
+    "config",
+    "provenance",
+    "coordinates",
+    "analysisStatus",
+    "coverage",
+    "pages",
+    "findings",
+    "decisions",
+    "limits",
+    "limitations",
+    "summary"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mikonyaa.github.io/slidetransit/schemas/decisions-1.0.json",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "comparisonId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "inputs": {
+      "type": "object",
+      "properties": {
+        "presentation": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "reference": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "candidate": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "required": [
+        "presentation",
+        "reference",
+        "candidate"
+      ],
+      "additionalProperties": false
+    },
+    "rules": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string"
+        },
+        "hash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "implementationHash": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "parameters": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "version",
+        "hash",
+        "implementationHash",
+        "parameters"
+      ],
+      "additionalProperties": false
+    },
+    "renderer": {
+      "type": "object"
+    },
+    "decisions": {
+      "type": "array",
+      "maxItems": 5000,
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "const": "accept-difference"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "author": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "regionHash": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "findingId": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "type",
+              "reason",
+              "timestamp",
+              "regionHash",
+              "findingId"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "const": "ignore-region"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 2000
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "author": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "regionHash": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              },
+              "page": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "region": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 4,
+                "maxItems": 4
+              }
+            },
+            "required": [
+              "type",
+              "reason",
+              "timestamp",
+              "regionHash",
+              "page",
+              "region"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "comparisonId",
+    "inputs",
+    "rules",
+    "renderer",
+    "decisions"
+  ],
+  "additionalProperties": false
+}

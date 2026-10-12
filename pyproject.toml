@@ -1,0 +1,50 @@
+[build-system]
+requires = ["hatchling==1.32.4"]
+build-backend = "hatchling.build"
+
+[project]
+name = "slidetransit"
+version = "0.1.0"
+description = "Compare real presentation exports and locate delivery regressions."
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+license = "MIT"
+authors = [{ name = "Meiram Bakhytzhan" }]
+classifiers = ["Development Status :: 3 - Alpha", "Programming Language :: Python :: 3.13", "Operating System :: MacOS", "Operating System :: POSIX :: Linux"]
+dependencies = ["pypdfium2==5.3.0", "pdfplumber==0.11.9", "Pillow==12.0.0", "numpy==2.2.6", "defusedxml==0.7.1", "jsonschema==4.26.0"]
+
+[project.scripts]
+slidetransit = "slidetransit.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/mikonyaa/slidetransit"
+Repository = "https://github.com/mikonyaa/slidetransit"
+
+[dependency-groups]
+dev = ["ruff==0.17.0", "mypy==2.4.0", "pytest==9.1.1", "build==1.6.1", "python-pptx==1.0.2", "pypdf==6.0.0", "reportlab==4.4.4", "playwright==1.60.0", "types-defusedxml", "types-jsonschema"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/slidetransit"]
+
+[tool.hatch.build.targets.sdist]
+include = ["/src", "/tests", "/scripts", "/docs", "/pyproject.toml", "/uv.lock", "/README.md", "/LICENSE", "/CHANGELOG.md", "/CONTRIBUTING.md", "/SECURITY.md", "/THIRD_PARTY_NOTICES.md"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["pypdfium2", "pypdfium2.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests/unit", "tests/integration", "tests/package"]
+addopts = "-ra"
