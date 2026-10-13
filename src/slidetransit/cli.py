@@ -7,6 +7,7 @@ import json
 import os
 import platform
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -14,6 +15,7 @@ import uuid
 import webbrowser
 from importlib.resources import as_file, files
 from pathlib import Path
+from types import FrameType
 
 from slidetransit import __version__
 from slidetransit.limits import DEFAULT_LIMITS, atomic_output
@@ -193,13 +195,31 @@ def main(argv: list[str] | None = None) -> int:
                     os.environ, SLIDETRANSIT_WORKER_TEMP=temporary, SLIDETRANSIT_RUN_ID=run_id
                 )
                 try:
-                    process = subprocess.run(
+                    process = subprocess.Popen(
                         [sys.executable, "-m", "slidetransit.cli", "--_worker", *arguments],
                         env=env,
-                        capture_output=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
                         text=True,
-                        timeout=DEFAULT_LIMITS.worker_seconds,
                     )
+                    previous_handler = signal.getsignal(signal.SIGINT)
+
+                    def interrupt_worker(signum: int, frame: FrameType | None) -> None:
+                        # communicate() gives a child a grace period on KeyboardInterrupt;
+                        # stop ours immediately so it cannot commit during that period.
+                        process.kill()
+                        raise KeyboardInterrupt
+
+                    signal.signal(signal.SIGINT, interrupt_worker)
+                    try:
+                        stdout, stderr = process.communicate(timeout=DEFAULT_LIMITS.worker_seconds)
+                    except BaseException:
+                        # Interrupt/timeout ends this invocation's worker before rollback.
+                        process.kill()
+                        process.communicate()
+                        raise
+                    finally:
+                        signal.signal(signal.SIGINT, previous_handler)
                 finally:
                     target = getattr(args, "out", getattr(args, "dir", None))
                     if target is not None:
@@ -212,9 +232,9 @@ def main(argv: list[str] | None = None) -> int:
                 raise TransitError(
                     "analysis worker stopped unexpectedly; no successful analysis is asserted"
                 )
-            print(process.stdout, end="")
-            if process.stderr:
-                print(process.stderr, file=sys.stderr, end="")
+            print(stdout, end="")
+            if stderr:
+                print(stderr, file=sys.stderr, end="")
             code = process.returncode
             if (
                 code in [0, 1, 3]
@@ -232,6 +252,7 @@ def main(argv: list[str] | None = None) -> int:
         emit(value, args.json)
         return code
     except KeyboardInterrupt:
+        emit({"result": "interrupted", "message": "Analysis interrupted.", "exitCode": 130}, args.json)
         return 130
     except subprocess.TimeoutExpired:
         emit(

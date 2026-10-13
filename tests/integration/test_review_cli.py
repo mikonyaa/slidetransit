@@ -37,15 +37,16 @@ def test_apply_review_and_stale_inputs_rules_renderer_region(real, tmp_path):
     assert len(reviewed["findings"]) == len(original["findings"])
     for change in ["inputs", "rules", "renderer", "region"]:
         changed = copy.deepcopy(original)
+        current_decisions = copy.deepcopy(decisions)
         if change == "region":
-            changed["findings"][0]["regionHash"] = "f" * 64
+            current_decisions["decisions"][0]["regionHash"] = "f" * 64
         elif change == "inputs":
             changed[change]["candidate"] = "f" * 64
         elif change == "rules":
             changed[change]["hash"] = "f" * 64
         else:
             changed[change]["pdfium"] = "changed"
-        stale = apply_decisions(changed, decisions)
+        stale = apply_decisions(changed, current_decisions)
         assert stale["summary"]["staleDecisions"] >= 1
         assert stale["summary"]["exitCode"] == 1
     decision_path = tmp_path / "decisions.json"

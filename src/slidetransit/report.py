@@ -9,6 +9,8 @@ from pathlib import Path
 
 from slidetransit.limits import Limits
 from slidetransit.models import JSON, TransitError
+from slidetransit.report_assets import asset_names, bundle_assets
+from slidetransit.report_validation import validate_asset_sizes, validate_report_semantics
 
 
 def write_report(report: JSON, out: Path, limits: Limits) -> None:
@@ -16,18 +18,15 @@ def write_report(report: JSON, out: Path, limits: Limits) -> None:
     report_bytes = len(json.dumps(report, ensure_ascii=False, allow_nan=False).encode("utf-8"))
     if report_bytes > limits.report_json_bytes:
         raise TransitError("report JSON exceeds size limit; reduce declared scope")
-    estimated = (
-        report_bytes
-        + sum(p.stat().st_size for p in (out / "assets").glob("*.png")) * 4 / 3
-        + 2 * 1024 * 1024
-    )
-    if estimated > limits.html_bytes:
-        raise TransitError("standalone HTML exceeds size limit; reduce scope or DPI")
+    validate_report_semantics(report, limits)
     images = {}
-    for image in sorted((out / "assets").glob("*.png")):
-        images["assets/" + image.name] = "data:image/png;base64," + base64.b64encode(
-            image.read_bytes()
-        ).decode("ascii")
+    with bundle_assets(out, limits) as assets:
+        for name in sorted(asset_names(report)):
+            data = assets.read(name)
+            if report_bytes + assets.total * 4 / 3 + 2 * 1024 * 1024 > limits.html_bytes:
+                raise TransitError("standalone HTML exceeds size limit; reduce scope or DPI")
+            images[name] = "data:image/png;base64," + base64.b64encode(data).decode("ascii")
+        validate_asset_sizes(report, assets.sizes)
     fonts = {}
     for name in ["NotoSans-Regular.ttf", "LiberationSerif-Regular.ttf"]:
         fonts[name] = "data:font/ttf;base64," + base64.b64encode(

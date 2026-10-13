@@ -64,6 +64,7 @@ class AssetLoader:
         self.descriptor = descriptor
         self.limits = limits
         self.total = 0
+        self.sizes: dict[str, tuple[int, int]] = {}
 
     def read(self, name: str) -> bytes:
         basename = asset_name(name)
@@ -96,12 +97,13 @@ class AssetLoader:
             with Image.open(io.BytesIO(data)) as image:
                 if image.format != "PNG" or image.width * image.height > self.limits.page_pixels:
                     raise TransitError("report asset must be a bounded PNG image")
+                self.sizes[name] = image.size
                 image.verify()
             with Image.open(io.BytesIO(data)) as image:
                 image.load()  # Verify compressed pixels as well as PNG chunk checksums.
             self.total += len(data)
             return data
-        except (OSError, ValueError, Image.DecompressionBombError) as exc:
+        except (OSError, ValueError, SyntaxError, Image.DecompressionBombError) as exc:
             if isinstance(exc, TransitError):
                 raise
             raise TransitError("missing, unsafe or invalid report asset: " + name) from exc

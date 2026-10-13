@@ -10,7 +10,7 @@ from slidetransit.limits import DEFAULT_LIMITS, atomic_output, load_json
 from slidetransit.manifest import validate
 from slidetransit.models import JSON, BBox, TransitError, fingerprint, update_summary
 from slidetransit.report_assets import asset_names, bundle_assets
-from slidetransit.report_validation import validate_report_semantics
+from slidetransit.report_validation import validate_asset_sizes, validate_report_semantics
 
 
 def binding(report: JSON) -> JSON:
@@ -118,6 +118,7 @@ def apply_review(report_path: Path, decisions_path: Path, out: Path) -> JSON:
         with bundle_assets(report_path.absolute().parent, DEFAULT_LIMITS) as assets:
             for name in sorted(asset_names(report)):
                 (working / name).write_bytes(assets.read(name))
+            validate_asset_sizes(report, assets.sizes)
         write_report(result, working, DEFAULT_LIMITS)
         (working / "report.json").write_text(
             json.dumps(result, indent=2, ensure_ascii=False, allow_nan=False) + "\n"

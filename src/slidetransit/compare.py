@@ -13,7 +13,7 @@ from PIL import Image, ImageFilter
 
 from slidetransit import __version__
 from slidetransit.limits import DEFAULT_LIMITS, Limits, atomic_output, sha256
-from slidetransit.manifest import Manifest, validate
+from slidetransit.manifest import Manifest
 from slidetransit.matching import match_blocks
 from slidetransit.models import (
     JSON,
@@ -28,6 +28,7 @@ from slidetransit.models import (
 )
 from slidetransit.pdf import Page, inspect_pdf, versions
 from slidetransit.pptx import Deck, attribute, read_deck
+from slidetransit.report_validation import validate_report_semantics
 
 
 def raster_regions(
@@ -278,7 +279,7 @@ def run_comparison(manifest: Manifest, out: Path, limits: Limits = DEFAULT_LIMIT
         "implementationHash": fingerprint(
             {
                 name: fingerprint(files("slidetransit").joinpath(name + ".py").read_text())
-                for name in ["compare", "coordinates", "matching", "pdf", "pptx", "models"]
+                for name in ["compare", "coordinates", "matching", "pdf", "pptx", "models", "report_validation", "report_assets"]
             }
         ),
         "parameters": {
@@ -557,7 +558,7 @@ def run_comparison(manifest: Manifest, out: Path, limits: Limits = DEFAULT_LIMIT
             )
         )
         update_summary(report)
-        validate(report, "report")
+        validate_report_semantics(report, limits)
         write_report(report, working, limits)
         (working / "report.json").write_text(
             json.dumps(report, indent=2, ensure_ascii=False, allow_nan=False) + "\n"

@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import shutil
+import stat
 import tempfile
 import unicodedata
 import zipfile
@@ -141,8 +142,21 @@ def atomic_output(out: Path, inputs: list[Path], limits: Limits = DEFAULT_LIMITS
         run_id + "-" if len(run_id) == 32 and all(c in "0123456789abcdef" for c in run_id) else ""
     )
     temporary = Path(tempfile.mkdtemp(prefix=prefix, dir=out.parent))
+    identity = temporary.lstat()
+
+    def owned() -> bool:
+        try:
+            current = temporary.lstat()
+        except FileNotFoundError:
+            return False
+        return stat.S_ISDIR(current.st_mode) and (current.st_dev, current.st_ino) == (
+            identity.st_dev, identity.st_ino
+        )
+
     try:
         yield temporary
+        if not owned():
+            raise TransitError("temporary output ownership changed; refusing commit")
         total = sum(p.stat().st_size for p in temporary.rglob("*") if p.is_file())
         if total > limits.output_bytes:
             raise TransitError("report exceeds total output limit")
@@ -150,5 +164,5 @@ def atomic_output(out: Path, inputs: list[Path], limits: Limits = DEFAULT_LIMITS
             raise TransitError("output appeared during analysis; refusing overwrite")
         os.rename(temporary, out)
     finally:
-        if temporary.exists():
+        if owned():
             shutil.rmtree(temporary)
