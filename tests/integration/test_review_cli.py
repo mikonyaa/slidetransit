@@ -37,17 +37,16 @@ def test_apply_review_and_stale_inputs_rules_renderer_region(real, tmp_path):
     assert reviewed["summary"]["exitCode"] == 0
     assert len(reviewed["findings"]) == len(original["findings"])
     for change in ["inputs", "rules", "renderer", "region"]:
-        changed = copy.deepcopy(original)
         current_decisions = copy.deepcopy(decisions)
         if change == "region":
             current_decisions["decisions"][0]["regionHash"] = "f" * 64
         elif change == "inputs":
-            changed[change]["candidate"] = "f" * 64
+            current_decisions[change]["candidate"] = "f" * 64
         elif change == "rules":
-            changed[change]["hash"] = "f" * 64
+            current_decisions[change]["hash"] = "f" * 64
         else:
-            changed[change]["pdfium"] = "changed"
-        stale = apply_decisions(changed, current_decisions)
+            current_decisions[change]["pdfium"] = "changed"
+        stale = apply_decisions(original, current_decisions)
         assert stale["summary"]["staleDecisions"] >= 1
         assert stale["summary"]["exitCode"] == 1
     decision_path = tmp_path / "decisions.json"
@@ -55,6 +54,15 @@ def test_apply_review_and_stale_inputs_rules_renderer_region(real, tmp_path):
     result = apply_review(tmp_path / "original/report.json", decision_path, tmp_path / "reviewed")
     assert result["summary"]["exitCode"] == 0
     assert (tmp_path / "reviewed/report.html").stat().st_size > 10000
+
+
+def test_new_producer_config_stales_original_decisions(real, tmp_path):
+    original = run_comparison(load_manifest(real / "symbol.json"), tmp_path / "original")
+    changed = run_comparison(load_manifest(real / "symbol.json", {"dpi": 151}), tmp_path / "changed")
+    assert changed["comparisonId"] != original["comparisonId"]
+    result = apply_decisions(changed, document(original))
+    assert result["summary"]["staleDecisions"] == len(original["findings"])
+    assert result["summary"]["accepted"] == 0 and result["summary"]["exitCode"] == 1
 
 
 def test_real_pdf_change_invalidates_previous_decision(real, tmp_path):

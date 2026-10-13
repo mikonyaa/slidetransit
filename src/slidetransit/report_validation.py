@@ -162,6 +162,24 @@ def validate_report_semantics(report: JSON, limits: Limits = DEFAULT_LIMITS) -> 
     if len(encoded) > limits.report_json_bytes:
         raise TransitError("report JSON exceeds size limit; reduce declared scope")
     validate(report, "report")
+    # This is the original 1.0 binding recipe, including declared provenance.
+    # Recomputed hashes check consistency; anyone holding the JSON can recompute them.
+    settings = {
+        "config": report["config"],
+        "ruleVersion": report["rules"]["version"],
+        "scope": report["provenance"]["scope"],
+        "mode": report["provenance"]["mode"],
+        "versions": report["renderer"],
+        "provenance": report["provenance"],
+        "implementationHash": report["rules"]["implementationHash"],
+        "parameters": report["rules"]["parameters"],
+    }
+    if report["rules"]["hash"] != fingerprint(settings) or report["comparisonId"] != fingerprint(
+        {"inputs": report["inputs"], **settings}
+    ):
+        raise TransitError(
+            "report identity conflicts with frozen inputs/configuration/rules/renderer"
+        )
     pages, coverage = report["pages"], report["coverage"]
     if len(pages) > limits.pages or len(report["findings"]) > limits.findings:
         raise TransitError("report exceeds page or finding limit")

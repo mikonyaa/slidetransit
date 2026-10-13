@@ -35,6 +35,7 @@ def main():
         "--grid-report", type=Path, help="Report with unavailable native raster grid comparison"
     )
     args = parser.parse_args()
+    args.out = args.out.resolve()
     args.out.mkdir(parents=True)
     demo = args.demo.resolve()
     cli = str(args.cli.resolve()) if args.cli else "slidetransit"

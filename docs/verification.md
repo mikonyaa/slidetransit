@@ -1,5 +1,53 @@
 # Verification evidence for the experimental 0.1.0 release
 
+The entries below describe the historical 0.1.0 release. Local 0.1.1rc1 candidate
+results are emitted as `release-consumer-results.json`, `contract-results.json`,
+`ui-results.json` and a separate command journal alongside the local artifacts.
+They do not create a new CI/public release claim. Candidate checks run on macOS
+26.7.1 ARM64 / Python 3.13.7; other current-candidate platforms remain unverified.
+
+Candidate reproduction (all output directories must be new):
+
+```sh
+uv sync --frozen --all-groups
+uv run --frozen ruff check .
+uv run --frozen mypy src
+uv run --frozen pytest
+uv run --frozen python scripts/create_schemas.py
+uv run --frozen python -m build
+uv run --frozen python scripts/verify_release.py --dist dist \
+  --json-out release-consumer-results.json --consumer-root /absolute/new/consumers
+uv run --frozen python scripts/verify_ui.py --help
+uv run --frozen python scripts/verify_ui.py \
+  --demo /absolute/new/consumers/wheel/demo-output --out /absolute/new/browser-qa \
+  --cli /absolute/new/consumers/wheel/venv/bin/slidetransit \
+  --browser-executable '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' \
+  --incomplete /absolute/new/consumers/wheel/contracts/partial-review/report.html \
+  --grid-report /absolute/new/consumers/wheel/contracts/fractional-239.9-150/report.html
+```
+
+Use only a browser executable actually available on that machine. The retained
+wheel and sdist consumers contain runtime dependencies, with no editable checkout,
+PYTHONPATH or development packages. Each consumer regenerates 17 own PDF pairs
+using a standard-library writer, compares native grids at six DPIs, exercises
+positive/negative review, checks exact JSON stdout and 0/1/2/3/130 exits, unchanged
+input/asset hashes, sentinel preservation and owned-worker interruption. The
+two-page partial fixture isolates one finding and a raster-only candidate page;
+unchanged acceptance must remain exit 3. Invalid coverage, assets and identity
+declarations must be rejected before commit. These synthetic probes are not an
+Office export pipeline or independent real-deck review.
+
+The UI verifier uses an owned temporary profile and direct `file://` reports with
+network and persistent storage disabled. It keeps packaged demo JSON/HTML/assets
+byte-for-byte unchanged; stress/malformed fixtures live in separate QA copies.
+It checks 390/1024/1440 layouts, paired crops, keyboard/filter/overlay/zoom, real
+downloaded decisions and installed-CLI application, unavailable channels after
+acceptance and rejection of a malformed import with no success bundle.
+
+See [migration](migration-0.1.1rc1.md) and the
+[fresh export / independent pilot](external-pilot.md) for compatibility and the
+external evidence still needed. Read the historical record below as historical.
+
 Local gate checked on 2026-10-12: macOS 26.7.1 ARM64, MacBook Pro M4, Python 3.13.7.
 The final release manifest supplies the immutable release source commit, successful
 exact-commit CI run, build environment and published file hashes; use those actual

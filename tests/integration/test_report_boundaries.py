@@ -123,6 +123,9 @@ def test_symlinks_are_rejected_at_every_asset_component(own_bundle, tmp_path, li
         "false-complete",
         "unsupported-acceptance",
         "wrong-raster-size",
+        "config-binding",
+        "input-binding",
+        "renderer-binding",
     ],
 )
 def test_malformed_import_is_rejected_without_committed_output(own_bundle, tmp_path, mutation):
@@ -156,6 +159,12 @@ def test_malformed_import_is_rejected_without_committed_output(own_bundle, tmp_p
     elif mutation == "wrong-raster-size":
         for role in ["reference", "candidate"]:
             report["pages"][0][role]["rasterSize"] = [1, 1]
+    elif mutation == "config-binding":
+        report["config"]["fail_on"] = "info"
+    elif mutation == "input-binding":
+        report["inputs"]["candidate"] = "f" * 64
+    elif mutation == "renderer-binding":
+        report["renderer"]["pdfium"] = "invented"
     (bundle / "report.json").write_text(json.dumps(report))
     with pytest.raises(TransitError):
         apply_review(bundle / "report.json", decisions, tmp_path / "invalid")

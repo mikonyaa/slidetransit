@@ -5,6 +5,8 @@ and it has not been pushed, merged or deployed.
 
 Report/manifest/decision `schemaVersion` remains `1.0`. Existing valid reports retain
 their comparison and decision identities. No hashes are rewritten during import.
+The original 1.0 rule/comparison binding recipe is recomputed to reject inconsistent
+input/configuration/renderer declarations under an unchanged identity.
 The tightened report schema defines pages, channel states, coverage, summary and
 stored decision records; runtime validation also checks their cross references and
 derivations. This is internal consistency checking of unsigned JSON, not a signature

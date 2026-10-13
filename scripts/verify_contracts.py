@@ -200,6 +200,9 @@ def verify(cli, root, presentation):
         "oversized",
         "corrupt-png",
         "wrong-grid",
+        "config-binding",
+        "input-binding",
+        "renderer-binding",
     ]
     for name in mutations:
         bundle = root / ("invalid-" + name)
@@ -255,6 +258,12 @@ def verify(cli, root, presentation):
         elif name == "wrong-grid":
             for role in ["reference", "candidate"]:
                 report["pages"][0][role]["rasterSize"] = [1, 1]
+        elif name == "config-binding":
+            report["config"]["fail_on"] = "info"
+        elif name == "input-binding":
+            report["inputs"]["candidate"] = "f" * 64
+        elif name == "renderer-binding":
+            report["renderer"]["pdfium"] = "invented"
         (bundle / "report.json").write_text(json.dumps(report))
         output = root / ("rejected-" + name)
         run(
