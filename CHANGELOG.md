@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.1rc1 — local candidate, not published
+## 0.1.1rc1 — 2026-10-14 (experimental prerelease)
 
 - Reject asset symlinks at every path component; verify bounded regular PNGs and copy unchanged bytes through anchored descriptors.
 - Validate report page/coverage completeness, channel states, findings/assets/decision references and derived status/summary before rendering or applying review.

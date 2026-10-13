@@ -1,10 +1,15 @@
-# Verification evidence for the experimental 0.1.0 release
+# Verification of the experimental releases
 
-The entries below describe the historical 0.1.0 release. Local 0.1.1rc1 candidate
-results are emitted as `release-consumer-results.json`, `contract-results.json`,
-`ui-results.json` and a separate command journal alongside the local artifacts.
-They do not create a new CI/public release claim. Candidate checks run on macOS
-26.7.1 ARM64 / Python 3.13.7; other current-candidate platforms remain unverified.
+For 0.1.1rc1, local frozen sync, Ruff, mypy (14 source modules), 116 tests, schema
+generation and build passed on macOS 26.7.1 ARM64 / Python 3.13.7 / PDFium
+145.0.7616.0. Separate installed wheel and sdist consumers each passed 45 contract
+probes without development dependencies. The offline UI passed nine assertions
+and produced 16 screenshots at 390/1024/1440 px in Chrome 155.0.8059.40.
+
+[Release receipts](https://github.com/mikonyaa/slidetransit/releases/tag/v0.1.1rc1)
+provide the exact release commit, successful CI run, artifact hashes and public
+download checks. Check those records for remote platform evidence; the historical
+0.1.0 measurements below are not measurements of the new prerelease.
 
 Candidate reproduction (all output directories must be new):
 

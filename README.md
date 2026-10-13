@@ -1,7 +1,8 @@
 # SlideTransit
 
-Local development candidate: **0.1.1rc1** adds strict report import/PNG boundaries and
-explicit native raster grid coverage. It has not been published. See
+Experimental prerelease: **0.1.1rc1** adds strict report import/PNG boundaries and
+explicit native raster grid coverage. Fresh Office exports and independent review
+of a real deck remain unverified. See
 [migration notes](docs/migration-0.1.1rc1.md) and the
 [fresh export / independent review runbook](docs/external-pilot.md).
 
@@ -13,7 +14,7 @@ Open a finding, inspect both crops, record a reason, and export a revision-bound
 decision. Your presentation stays on your machine.
 
 [Static sample](https://mikonyaa.github.io/slidetransit/) ·
-[Download v0.1.0](https://github.com/mikonyaa/slidetransit/releases/tag/v0.1.0) ·
+[Download v0.1.1rc1](https://github.com/mikonyaa/slidetransit/releases/tag/v0.1.1rc1) ·
 [Comparison model](docs/comparison-model.md) · [Known limits](docs/limitations.md)
 
 ![25-second recording made from genuine browser screenshots: unchanged control, clipped own source variant, evidence crops, fixed source export](docs/assets/demo.gif)
@@ -36,7 +37,7 @@ paired evidence → an explained decision → a repeatable artifact with provena
 See the [measured office2pdf comparison and current baselines](docs/competitive-baseline.md).
 No demand, time-saving or general superiority claim is made.
 
-## Install the published wheel
+## Install the prerelease wheel
 
 Requirements: Python **3.13**, macOS or Linux, and network access to install the
 pinned dependencies once. Runtime analysis is local. Office, LibreOffice, uv and
@@ -46,15 +47,17 @@ Node.js are **not** runtime requirements. PyPI publication is not part of this r
 python3.13 -m venv .venv
 . .venv/bin/activate
 curl --fail --location \
-  https://github.com/mikonyaa/slidetransit/releases/download/v0.1.0/slidetransit-0.1.0-py3-none-any.whl \
-  --output slidetransit-0.1.0-py3-none-any.whl
-python -m pip install "$PWD/slidetransit-0.1.0-py3-none-any.whl"
+  https://github.com/mikonyaa/slidetransit/releases/download/v0.1.1rc1/slidetransit-0.1.1rc1-py3-none-any.whl \
+  --output slidetransit-0.1.1rc1-py3-none-any.whl
+python -m pip install "$PWD/slidetransit-0.1.1rc1-py3-none-any.whl"
 slidetransit doctor
 slidetransit demo --out demo-output --no-open
 ```
 
 For a wheel downloaded in your browser, use
-`python -m pip install /absolute/path/to/slidetransit-0.1.0-py3-none-any.whl`.
+`python -m pip install /absolute/path/to/slidetransit-0.1.1rc1-py3-none-any.whl`.
+The previous experimental [0.1.0 release](https://github.com/mikonyaa/slidetransit/releases/tag/v0.1.0)
+remains available; read the migration notes before importing stored reports.
 Open `demo-output/clipped/report.html` directly in your browser. The demo checks
 `repeat=0`, `clipped=1` and `fixed=0`; its overall exit is 0 only when all expected
 subcase results hold. **The clipped case remains failing.**
@@ -125,7 +128,7 @@ your presentation content in browser storage.
 `analysisStatus` and findings are independent. Clear means agreement within the
 declared, actually checked scope; it does not mean good slide design or Office parity.
 
-## What v0.1.0 supports
+## What v0.1.1rc1 supports
 
 Python 3.13; local macOS 26.7.1 ARM64 on an M4 and the CI matrix in
 [ci.yml](.github/workflows/ci.yml) (Ubuntu 24.04 and macOS 15). A platform is confirmed
@@ -222,4 +225,4 @@ OFL licenses. [Third-party notices](THIRD_PARTY_NOTICES.md) include PDFium compo
 
 Possible P2 work: adapters for available exporters, broader validated text/source
 mapping, batch comparisons, more confirmed platforms and optional PyPI/Homebrew
-distribution. They are not implemented or promised in v0.1.0.
+distribution. They are not implemented or promised in v0.1.1rc1.

@@ -1,6 +1,6 @@
 # Formats v1.0
 
-The local 0.1.1rc1 candidate keeps version 1.0 and tightens imported report semantics.
+The 0.1.1rc1 prerelease keeps version 1.0 and tightens imported report semantics.
 See [migration notes](migration-0.1.1rc1.md) for valid historical reports, explicit
 native grid coverage, unchanged decision identity and rejection behavior.
 

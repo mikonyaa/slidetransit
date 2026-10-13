@@ -1,7 +1,8 @@
-# Local 0.1.1rc1 candidate
+# 0.1.1rc1 prerelease migration
 
-This candidate is prepared locally. It does not replace the published 0.1.0 release,
-and it has not been pushed, merged or deployed.
+This experimental prerelease keeps the previous 0.1.0 release available. See the
+[release assets and verification receipts](https://github.com/mikonyaa/slidetransit/releases/tag/v0.1.1rc1)
+for the exact source commit, CI build and downloaded-package checks.
 
 Report/manifest/decision `schemaVersion` remains `1.0`. Existing valid reports retain
 their comparison and decision identities. No hashes are rewritten during import.

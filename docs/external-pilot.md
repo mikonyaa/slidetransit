@@ -1,6 +1,6 @@
 # Fresh export and independent deck review
 
-Status: **not performed for this local candidate**. Saved authored exports and new
+Status: **not performed for 0.1.1rc1**. Saved authored exports and new
 synthetic PDFs provide separate mechanism evidence. An installed app, a script
 passing its own tests, or a historical fixture is not today's export/review evidence.
 This runbook requires a real deck, an operator who can export it, and a reviewer
