@@ -282,6 +282,8 @@ def run_comparison(manifest: Manifest, out: Path, limits: Limits = DEFAULT_LIMIT
             }
         ),
         "parameters": {
+            "pageSizeTolerancePt": 0.25,
+            "rasterGridPolicy": "native-grid-no-resampling",
             "rasterTilePixels": 8,
             "rasterGroupingDilationTiles": 5,
             "lineYtolerancePt": 2,
@@ -372,7 +374,11 @@ def run_comparison(manifest: Manifest, out: Path, limits: Limits = DEFAULT_LIMIT
                 "sourceSlide": start + index,
                 "correspondence": "declared-order" if corresponds else "unresolved",
             }
-            coverage: JSON = {"page": page_number, "correspondence": record["correspondence"]}
+            coverage: JSON = {
+                "page": page_number,
+                "correspondence": record["correspondence"],
+                "rasterComparison": "unavailable-unresolved-correspondence",
+            }
             for role, page in [("reference", left), ("candidate", right)]:
                 if page is None:
                     record[role], coverage[role] = (
@@ -387,6 +393,7 @@ def run_comparison(manifest: Manifest, out: Path, limits: Limits = DEFAULT_LIMIT
                         "mediaBox": page.media_box,
                         "cropBox": page.crop_box,
                         "image": page.image_path,
+                        "rasterSize": list(page.image.size),
                         "textBlocks": [
                             {
                                 "text": b.text,
@@ -412,6 +419,9 @@ def run_comparison(manifest: Manifest, out: Path, limits: Limits = DEFAULT_LIMIT
             report["coverage"].append(coverage)
             if not corresponds or left is None or right is None:
                 continue
+            items = text_findings(left, right, page_number, config, deck, start + index)
+            left.image = Image.open(working / left.image_path).convert("RGB")
+            right.image = Image.open(working / right.image_path).convert("RGB")
             geometry_equal = (
                 abs(left.width - right.width) <= 0.25 and abs(left.height - right.height) <= 0.25
             )
@@ -437,86 +447,87 @@ def run_comparison(manifest: Manifest, out: Path, limits: Limits = DEFAULT_LIMIT
                 report["limitations"].append(
                     "Different page sizes are not stretched; raster comparison is unavailable on this page."
                 )
-                continue
-            items = text_findings(left, right, page_number, config, deck, start + index)
-            left.image = Image.open(working / left.image_path).convert("RGB")
-            right.image = Image.open(working / right.image_path).convert("RGB")
-            if left.image.size != right.image.size:
-                raise TransitError("same-sized pages rendered to different bitmap dimensions")
-            regions, mask = raster_regions(left.image, right.image, config)
-            mask_path = f"assets/mask-{page_number}.png"
-            mask.save(working / mask_path)
-            record["mask"] = mask_path
-            coverage["rasterComparison"] = "complete"
-            # Low intensity regions are visible hints, never an override of text findings.
-            for region in regions:
-                box = BBox(*(p / (config.dpi / 72) for p in region["pixelBox"]))
-                intensity_hint = region["maxDelta"] <= 32
-                item = finding(
-                    "raster-region-change",
-                    page_number,
-                    "low" if intensity_hint else "medium",
-                    "Raster region changed",
-                    {
-                        "observed": region,
-                        "channel": "raster",
-                        "threshold": config.pixel_delta,
-                        "confidence": "low" if intensity_hint else "measured-difference",
-                        "probableExplanation": "Low intensity raster-only difference; antialiasing is one possible explanation."
-                        if intensity_hint
-                        else "Content, geometry or rendering change; cause is not established.",
-                    },
-                    box,
-                    box,
+            elif left.image.size != right.image.size:
+                coverage["rasterComparison"] = "unavailable-different-raster-grid"
+                report["analysisStatus"] = "incomplete"
+                report["limitations"].append(
+                    f"Page {page_number}: native raster grids {left.image.size} and {right.image.size} differ at {config.dpi} DPI within the 0.25 pt page-size tolerance; raster comparison is unavailable. No resampling or alignment was applied."
                 )
-                items.append(item)
-            # Clipping can be suggested when extracted glyphs have far less ink.
-            for left_block, right_block, _ in match_blocks(left.blocks, right.blocks)[0]:
-                if left_block.normalized != right_block.normalized:
-                    continue
-
-                def ink(page: Page, box: BBox) -> int:
-                    scale = config.dpi / 72
-                    bounds = (
-                        max(0, int(box.x0 * scale)),
-                        max(0, int(box.y0 * scale)),
-                        min(page.image.width, math.ceil(box.x1 * scale)),
-                        min(page.image.height, math.ceil(box.y1 * scale)),
+            else:
+                regions, mask = raster_regions(left.image, right.image, config)
+                mask_path = f"assets/mask-{page_number}.png"
+                mask.save(working / mask_path)
+                record["mask"] = mask_path
+                coverage["rasterComparison"] = "complete"
+                # Low intensity regions are visible hints, never an override of text findings.
+                for region in regions:
+                    box = BBox(*(p / (config.dpi / 72) for p in region["pixelBox"]))
+                    intensity_hint = region["maxDelta"] <= 32
+                    item = finding(
+                        "raster-region-change",
+                        page_number,
+                        "low" if intensity_hint else "medium",
+                        "Raster region changed",
+                        {
+                            "observed": region,
+                            "channel": "raster",
+                            "threshold": config.pixel_delta,
+                            "confidence": "low" if intensity_hint else "measured-difference",
+                            "probableExplanation": "Low intensity raster-only difference; antialiasing is one possible explanation."
+                            if intensity_hint
+                            else "Content, geometry or rendering change; cause is not established.",
+                        },
+                        box,
+                        box,
                     )
-                    if bounds[2] <= bounds[0] or bounds[3] <= bounds[1]:
-                        return 0
-                    return int((np.asarray(page.image.crop(bounds)).min(axis=2) < 160).sum())
+                    items.append(item)
+                # Clipping can be suggested when extracted glyphs have far less ink.
+                for left_block, right_block, _ in match_blocks(left.blocks, right.blocks)[0]:
+                    if left_block.normalized != right_block.normalized:
+                        continue
 
-                ref_ink, cand_ink = ink(left, left_block.bbox), ink(right, right_block.bbox)
-                if (
-                    ref_ink >= 40
-                    and cand_ink < ref_ink * 0.45
-                    and not any(
-                        f["ruleId"] == "possible-clipping"
-                        and f["referenceBBox"] == left_block.bbox.values()
-                        for f in items
-                    )
-                ):
-                    items.append(
-                        finding(
-                            "possible-clipping",
-                            page_number,
-                            "high",
-                            "Possible clipping or lost visible ink",
-                            {
-                                "observed": {
-                                    "referenceInkPixels": ref_ink,
-                                    "candidateInkPixels": cand_ink,
-                                    "textRetained": left_block.text,
-                                },
-                                "channel": "raster+text",
-                                "probableExplanation": "Visible ink reduced despite retained text; clipping, color or occlusion may explain it.",
-                                "confidence": "conditional",
-                            },
-                            left_block.bbox,
-                            right_block.bbox,
+                    def ink(page: Page, box: BBox) -> int:
+                        scale = config.dpi / 72
+                        bounds = (
+                            max(0, int(box.x0 * scale)),
+                            max(0, int(box.y0 * scale)),
+                            min(page.image.width, math.ceil(box.x1 * scale)),
+                            min(page.image.height, math.ceil(box.y1 * scale)),
                         )
-                    )
+                        if bounds[2] <= bounds[0] or bounds[3] <= bounds[1]:
+                            return 0
+                        return int((np.asarray(page.image.crop(bounds)).min(axis=2) < 160).sum())
+
+                    ref_ink, cand_ink = ink(left, left_block.bbox), ink(right, right_block.bbox)
+                    if (
+                        ref_ink >= 40
+                        and cand_ink < ref_ink * 0.45
+                        and not any(
+                            f["ruleId"] == "possible-clipping"
+                            and f["referenceBBox"] == left_block.bbox.values()
+                            for f in items
+                        )
+                    ):
+                        items.append(
+                            finding(
+                                "possible-clipping",
+                                page_number,
+                                "high",
+                                "Possible clipping or lost visible ink",
+                                {
+                                    "observed": {
+                                        "referenceInkPixels": ref_ink,
+                                        "candidateInkPixels": cand_ink,
+                                        "textRetained": left_block.text,
+                                    },
+                                    "channel": "raster+text",
+                                    "probableExplanation": "Visible ink reduced despite retained text; clipping, color or occlusion may explain it.",
+                                    "confidence": "conditional",
+                                },
+                                left_block.bbox,
+                                right_block.bbox,
+                            )
+                        )
             for item in items:
                 save_crops(item, left, right, working, config.dpi)
             report["findings"].extend(items)

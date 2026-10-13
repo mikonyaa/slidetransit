@@ -12,6 +12,7 @@ CHANNEL_STATES = {"complete", "partial", "unavailable", "absent"}
 RASTER_COMPARISONS = {
     "complete",
     "unavailable-different-page-size",
+    "unavailable-different-raster-grid",
     "unavailable-unresolved-correspondence",
 }
 
