@@ -49,7 +49,8 @@ paths through symlinks (including `/tmp` aliases on some systems) must be suppli
 via a regular directory path. File, pixel, aggregate output and HTML bounds apply;
 stored JSON limits cannot raise the active loader limits. Copied bytes are unchanged.
 
-New comparisons include the native-grid policy and updated implementation hashes in
+New comparisons include the native-grid policy and updated implementation hashes
+(including active runtime schemas and limit guards) in
 their binding. Re-run comparison after upgrading, and review its new identity; old
 decisions are expected to be stale against newly measured evidence. Applying old
 decisions to their unchanged valid historical report still works.

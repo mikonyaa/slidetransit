@@ -423,7 +423,7 @@
                         },
                         "sizePt": {
                           "type": "number",
-                          "exclusiveMinimum": 0
+                          "minimum": 0
                         },
                         "characters": {
                           "type": "array",
@@ -443,7 +443,7 @@
                               },
                               "size": {
                                 "type": "number",
-                                "exclusiveMinimum": 0
+                                "minimum": 0
                               },
                               "horizontal": {
                                 "type": "boolean"
@@ -566,7 +566,7 @@
                         },
                         "sizePt": {
                           "type": "number",
-                          "exclusiveMinimum": 0
+                          "minimum": 0
                         },
                         "characters": {
                           "type": "array",
@@ -586,7 +586,7 @@
                               },
                               "size": {
                                 "type": "number",
-                                "exclusiveMinimum": 0
+                                "minimum": 0
                               },
                               "horizontal": {
                                 "type": "boolean"

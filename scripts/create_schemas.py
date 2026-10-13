@@ -15,6 +15,7 @@ def main():
     object_ = {"type": "object"}
     integer = {"type": "integer", "minimum": 1}
     positive = {"type": "number", "exclusiveMinimum": 0}
+    nonnegative = {"type": "number", "minimum": 0}
     asset = {"type": "string", "pattern": r"^assets/[^/\\:\u0000]+\.png$"}
     channel = {"enum": ["complete", "partial", "unavailable", "absent"]}
     correspondence = {"enum": ["declared-order", "unresolved"]}
@@ -154,7 +155,7 @@ def main():
         }
     )
     character = obj(
-        {"text": string, "bbox": box, "size": positive, "horizontal": {"type": "boolean"}}
+        {"text": string, "bbox": box, "size": nonnegative, "horizontal": {"type": "boolean"}}
     )
     block = obj(
         {
@@ -162,7 +163,7 @@ def main():
             "normalized": string,
             "bbox": box,
             "lines": {"type": "array", "items": string},
-            "sizePt": positive,
+            "sizePt": nonnegative,
             "characters": {
                 "type": "array",
                 "items": character,

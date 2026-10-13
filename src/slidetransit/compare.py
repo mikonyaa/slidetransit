@@ -278,8 +278,14 @@ def run_comparison(manifest: Manifest, out: Path, limits: Limits = DEFAULT_LIMIT
         "provenance": manifest.provenance,
         "implementationHash": fingerprint(
             {
-                name: fingerprint(files("slidetransit").joinpath(name + ".py").read_text())
-                for name in ["compare", "coordinates", "matching", "pdf", "pptx", "models", "limits", "report_validation", "report_assets"]
+                **{
+                    name: fingerprint(files("slidetransit").joinpath(name + ".py").read_text())
+                    for name in ["compare", "coordinates", "matching", "pdf", "pptx", "models", "limits", "report_validation", "report_assets"]
+                },
+                **{
+                    name + ".schema.json": fingerprint(files("slidetransit").joinpath("schemas", name + ".schema.json").read_text())
+                    for name in ["manifest", "report", "decisions"]
+                },
             }
         ),
         "parameters": {

@@ -11,10 +11,12 @@ from slidetransit.limits import sha256
 from slidetransit.manifest import load_manifest
 
 
-def fractional_manifest(real, tmp_path, width, dpi, shift=0):
+def fractional_manifest(real, tmp_path, width, dpi, shift=0, font_size=12):
     for role, size in [("reference", 240.0), ("candidate", width)]:
         pdf = tmp_path / (role + ".pdf")
         drawing = canvas.Canvas(str(pdf), pagesize=(size, 160), invariant=1)
+        if font_size != 12:
+            drawing.setFont("Helvetica", font_size)
         drawing.drawString(20 + (shift if role == "candidate" else 0), 100, "Same content 123")
         drawing.save()
     data = json.loads((real / "repeat.json").read_text())
@@ -77,3 +79,14 @@ def test_unavailable_raster_retains_text_geometry_findings_and_crops(real, tmp_p
     item = next(f for f in report["findings"] if f["ruleId"] == "displacement")
     assert set(item["cropReferences"]) == {"reference", "candidate"}
     assert not any(f["ruleId"] == "raster-region-change" for f in report["findings"])
+
+
+def test_zero_size_glyph_geometry_is_valid_and_not_rejected_by_report_schema(real, tmp_path):
+    report = run_comparison(
+        fractional_manifest(real, tmp_path, 240, 150, font_size=0), tmp_path / "report"
+    )
+    assert report["analysisStatus"] == "complete" and report["summary"]["exitCode"] == 0
+    assert report["findings"] == []
+    for role in ["reference", "candidate"]:
+        assert report["pages"][0][role]["textBlocks"][0]["sizePt"] == 0
+        assert report["coverage"][0][role]["geometry"] == "complete"
