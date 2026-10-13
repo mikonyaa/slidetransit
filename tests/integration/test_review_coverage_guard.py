@@ -1,3 +1,6 @@
+import pytest
+
+from slidetransit.models import TransitError
 from slidetransit.review import apply_decisions, binding
 
 
@@ -18,7 +21,5 @@ def test_acceptance_cannot_convert_inconsistent_stored_coverage_to_pass(compare_
             for f in report["findings"]
         ],
     }
-    result = apply_decisions(report, decisions)
-    assert result["summary"]["accepted"] == len(report["findings"])
-    assert result["analysisStatus"] == "incomplete"
-    assert result["summary"]["exitCode"] == 3
+    with pytest.raises(TransitError, match="analysisStatus.*coverage"):
+        apply_decisions(report, decisions)
