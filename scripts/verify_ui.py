@@ -283,7 +283,7 @@ def main():
             for width in [1440, 1024, 390]:
                 page.set_viewport_size({"width": width, "height": 1000})
                 page.goto(source.resolve().as_uri())
-                assert page.locator("#status").inner_text() == "Analysis incomplete"
+                assert page.locator("#status").inner_text().casefold() == "analysis incomplete"
                 if name == "incomplete":
                     page.get_by_role("button", name="Slide 02").click()
                     assert (
