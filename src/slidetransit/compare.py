@@ -279,7 +279,7 @@ def run_comparison(manifest: Manifest, out: Path, limits: Limits = DEFAULT_LIMIT
         "implementationHash": fingerprint(
             {
                 name: fingerprint(files("slidetransit").joinpath(name + ".py").read_text())
-                for name in ["compare", "coordinates", "matching", "pdf", "pptx", "models", "report_validation", "report_assets"]
+                for name in ["compare", "coordinates", "matching", "pdf", "pptx", "models", "limits", "report_validation", "report_assets"]
             }
         ),
         "parameters": {

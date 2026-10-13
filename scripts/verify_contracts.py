@@ -321,7 +321,9 @@ def verify(cli, root, presentation):
     )
     try:
         deadline = time.monotonic() + 10
-        while not [p for p in root.glob(".slidetransit-*") if p != other]:
+        while not [
+            p for p in root.glob(".slidetransit-*") if p != other and (p / "assets").is_dir()
+        ]:
             assert process.poll() is None and time.monotonic() < deadline
             time.sleep(0.005)
         process.send_signal(signal.SIGINT)

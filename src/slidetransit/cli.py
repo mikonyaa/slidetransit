@@ -18,7 +18,7 @@ from pathlib import Path
 from types import FrameType
 
 from slidetransit import __version__
-from slidetransit.limits import DEFAULT_LIMITS, atomic_output
+from slidetransit.limits import DEFAULT_LIMITS, atomic_output, cleanup_owned_outputs
 from slidetransit.models import JSON, TransitError
 
 
@@ -224,10 +224,8 @@ def main(argv: list[str] | None = None) -> int:
                     target = getattr(args, "out", getattr(args, "dir", None))
                     if target is not None:
                         # A native crash cannot run the child's Python finally block.
-                        # Clean only directories named with this invocation's nonce.
-                        for owned in target.resolve().parent.glob(".slidetransit-" + run_id + "-*"):
-                            if owned.is_dir() and not owned.is_symlink():
-                                shutil.rmtree(owned)
+                        # Require this invocation's registered inode, not just its nonce.
+                        cleanup_owned_outputs(Path(temporary), target.resolve().parent, run_id)
             if process.returncode not in [0, 1, 2, 3, 130]:
                 raise TransitError(
                     "analysis worker stopped unexpectedly; no successful analysis is asserted"

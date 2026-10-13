@@ -59,6 +59,10 @@ Python 3.13 and all pinned third-party dependencies remain unchanged. The sole
 SIGINT returns one JSON interrupted result (exit 130 with `--json`), stops only the
 invocation's worker and cleans only owned staging directories. Rollback checks the
 staging inode and preserves a replaced directory belonging to another writer.
+The parent crash/interrupt fallback also requires a bounded worker ownership record
+with the nonce and matching device/inode. Unregistered or uncertain directories are
+preserved. A native crash before registration can leave an uncommitted empty staging
+directory; the parent does not delete an uncertain replacement by guessing ownership.
 
 For reproducible package and browser checks, see [verification](verification.md).
 Fresh app exports and a real independent review are covered by the

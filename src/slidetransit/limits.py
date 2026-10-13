@@ -132,6 +132,44 @@ def guard_output(out: Path, inputs: list[Path]) -> None:
             raise TransitError("output would contain or overwrite an input")
 
 
+def cleanup_owned_outputs(worker_temp: Path, parent: Path, run_id: str) -> None:
+    """Crash fallback: a nonce alone does not prove ownership of a replacement inode."""
+    ledger = worker_temp / "owned-outputs.jsonl"
+    descriptor = None
+    try:
+        descriptor = os.open(ledger, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        metadata = os.fstat(descriptor)
+        if not stat.S_ISREG(metadata.st_mode) or metadata.st_size > 64 * 1024:
+            return
+        with os.fdopen(descriptor, "r", encoding="utf-8") as stream:
+            descriptor = None
+            records = stream.read(64 * 1024 + 1).splitlines()
+        if len(records) > 256:
+            return
+        for line in records:
+            record = json.loads(line)
+            if not isinstance(record, dict) or record.get("runId") != run_id:
+                continue
+            path = Path(record["path"])
+            if path.parent != parent or not path.name.startswith(".slidetransit-" + run_id + "-"):
+                continue
+            try:
+                current = path.lstat()
+            except FileNotFoundError:
+                continue
+            if stat.S_ISDIR(current.st_mode) and (current.st_dev, current.st_ino) == (
+                record["device"],
+                record["inode"],
+            ):
+                shutil.rmtree(path)
+    except (OSError, ValueError, KeyError, TypeError):
+        # Unregistered/uncertain directories are preserved rather than guessed owned.
+        return
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+
+
 @contextmanager
 def atomic_output(out: Path, inputs: list[Path], limits: Limits = DEFAULT_LIMITS) -> Iterator[Path]:
     guard_output(out, inputs)
@@ -150,10 +188,32 @@ def atomic_output(out: Path, inputs: list[Path], limits: Limits = DEFAULT_LIMITS
         except FileNotFoundError:
             return False
         return stat.S_ISDIR(current.st_mode) and (current.st_dev, current.st_ino) == (
-            identity.st_dev, identity.st_ino
+            identity.st_dev,
+            identity.st_ino,
         )
 
     try:
+        worker_temp = os.environ.get("SLIDETRANSIT_WORKER_TEMP")
+        if worker_temp and len(run_id) == 32 and all(c in "0123456789abcdef" for c in run_id):
+            ledger = Path(worker_temp) / "owned-outputs.jsonl"
+            entry = (
+                json.dumps(
+                    {
+                        "runId": run_id,
+                        "path": str(temporary),
+                        "device": identity.st_dev,
+                        "inode": identity.st_ino,
+                    }
+                )
+                + "\n"
+            )
+            descriptor = os.open(
+                ledger, os.O_WRONLY | os.O_CREAT | os.O_APPEND | os.O_NOFOLLOW, 0o600
+            )
+            with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+                if os.fstat(stream.fileno()).st_size + len(entry.encode("utf-8")) > 64 * 1024:
+                    raise TransitError("owned output ledger exceeds limit")
+                stream.write(entry)
         yield temporary
         if not owned():
             raise TransitError("temporary output ownership changed; refusing commit")

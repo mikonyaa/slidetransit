@@ -29,7 +29,7 @@ def test_interrupt_kills_owned_worker_and_preserves_other_output(real, tmp_path)
         deadline = time.monotonic() + 10
         while time.monotonic() < deadline:
             owned = [p for p in tmp_path.glob(".slidetransit-*") if p != other]
-            if owned:
+            if any((p / "assets").is_dir() for p in owned):
                 break
             assert process.poll() is None
             time.sleep(0.005)
