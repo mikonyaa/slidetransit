@@ -1,5 +1,10 @@
 # SlideTransit
 
+Local development candidate: **0.1.1rc1** adds strict report import/PNG boundaries and
+explicit native raster grid coverage. It has not been published. See
+[migration notes](docs/migration-0.1.1rc1.md) and the
+[fresh export / independent review runbook](docs/external-pilot.md).
+
 **Compare real presentation exports and locate delivery regressions.**
 
 SlideTransit takes one source PPTX and two **already exported PDFs**, measures text,

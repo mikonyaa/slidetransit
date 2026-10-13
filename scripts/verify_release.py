@@ -6,6 +6,7 @@ import argparse
 import hashlib
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -50,6 +51,19 @@ def consumer(wheel, root, env):
     ).strip()
     if not Path(module).resolve().is_relative_to(venv.resolve()):
         raise RuntimeError("consumer imported checkout instead of installed package")
+    installed = json.loads(run([python, "-m", "pip", "list", "--format=json"], root, env))
+    forbidden = {
+        "pytest",
+        "ruff",
+        "mypy",
+        "reportlab",
+        "python-pptx",
+        "pypdf",
+        "playwright",
+        "build",
+    }
+    if forbidden & {p["name"].lower() for p in installed}:
+        raise RuntimeError("consumer contains development dependencies")
     run([cli, "--help"], root, env)
     version = run([cli, "--version"], root, env).strip()
     doctor = json.loads(run([cli, "doctor", "--json"], root, env))
@@ -133,6 +147,23 @@ def consumer(wheel, root, env):
     html = (root / "report/report.html").read_text()
     assert "data:image/png;base64," in html and "fetch(" not in html
     assert demo["cases"]["clipped"]["exitCode"] == 1 and comparison["analysisStatus"] == "complete"
+    for script in ["create_contract_fixtures.py", "verify_contracts.py"]:
+        shutil.copyfile(Path(__file__).parent / script, root / script)
+    run(
+        [
+            python,
+            root / "verify_contracts.py",
+            "--cli",
+            cli,
+            "--out",
+            root / "contracts",
+            "--presentation",
+            root / "sample/baseline.pptx",
+        ],
+        root,
+        env,
+    )
+    contracts = json.loads((root / "contracts/contract-results.json").read_text())
     return {
         "wheel": wheel.name,
         "version": version,
@@ -142,6 +173,9 @@ def consumer(wheel, root, env):
         "demo": demo,
         "seconds": round(time.monotonic() - started, 2),
         "installedOutsideCheckout": True,
+        "noDevDependencies": True,
+        "installedPackages": installed,
+        "contracts": contracts,
     }
 
 
@@ -149,6 +183,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dist", type=Path, required=True)
     parser.add_argument("--json-out", type=Path)
+    parser.add_argument(
+        "--consumer-root",
+        type=Path,
+        help="Retain both owned consumers at a new path for inspection/UI QA",
+    )
     args = parser.parse_args()
     dist = args.dist.resolve()
     wheels = list(dist.glob("*.whl"))
@@ -158,7 +197,16 @@ def main():
     env = dict(os.environ, CI="1", PIP_DISABLE_PIP_VERSION_CHECK="1")
     for key in ["PYTHONPATH", "PYTHONHOME", "VIRTUAL_ENV"]:
         env.pop(key, None)
-    with tempfile.TemporaryDirectory(prefix="slidetransit-consumer-") as temporary:
+    from contextlib import nullcontext
+
+    if args.consumer_root:
+        args.consumer_root.mkdir(parents=True)
+    context = (
+        nullcontext(str(args.consumer_root.resolve()))
+        if args.consumer_root
+        else tempfile.TemporaryDirectory(prefix="slidetransit-consumer-")
+    )
+    with context as temporary:
         root = Path(temporary)
         wheel_result = consumer(wheels[0], root / "wheel", env)
         run([sys.executable, "-m", "venv", root / "builder"], root, env)

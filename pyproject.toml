@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "slidetransit"
-version = "0.1.0"
+version = "0.1.1rc1"
 description = "Compare real presentation exports and locate delivery regressions."
 readme = "README.md"
 requires-python = ">=3.13,<3.14"

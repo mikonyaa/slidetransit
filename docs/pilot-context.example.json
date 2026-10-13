@@ -1,0 +1,12 @@
+{
+  "scope": {"slideRange": [1, 2], "pageOrder": "source-order", "kind": "slides", "includeHidden": false},
+  "config": {"dpi": 150, "pixel_delta": 16, "fail_on": "medium"},
+  "limitations": ["Replace this template with observed context; independence and Office/device review remain pending."],
+  "exports": {
+    "reference": {"renderer": {"name": "unknown", "version": "unknown"}, "environment": {"os": "unknown", "architecture": "unknown", "fonts": "unknown"}, "exportOptions": {}, "capturedAt": "unknown"},
+    "repeat": {"renderer": {"name": "unknown", "version": "unknown"}, "environment": {"os": "unknown", "architecture": "unknown", "fonts": "unknown"}, "exportOptions": {}, "capturedAt": "unknown"},
+    "candidate": {"renderer": {"name": "unknown", "version": "unknown"}, "environment": {"os": "unknown", "architecture": "unknown", "fonts": "unknown"}, "exportOptions": {}, "capturedAt": "unknown"},
+    "fixed": {"renderer": {"name": "unknown", "version": "unknown"}, "environment": {"os": "unknown", "architecture": "unknown", "fonts": "unknown"}, "exportOptions": {}, "capturedAt": "unknown"}
+  },
+  "independentReview": {"status": "pending", "reviewer": "unknown", "device": "unknown", "browserVersion": "unknown"}
+}

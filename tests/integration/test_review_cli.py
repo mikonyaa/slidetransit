@@ -6,6 +6,7 @@ import subprocess
 
 import pytest
 
+from slidetransit import __version__
 from slidetransit.compare import run_comparison
 from slidetransit.manifest import load_manifest
 from slidetransit.models import TransitError, fingerprint
@@ -151,7 +152,7 @@ def test_cli_real_flow_unicode_space_paths(real, tmp_path):
 
 
 def test_doctor_and_demo(tmp_path):
-    assert run_cli("--version").stdout.strip() == "slidetransit 0.1.0"
+    assert run_cli("--version").stdout.strip() == "slidetransit " + __version__
     assert run_cli("--help").returncode == 0
     doctor = run_cli("doctor", "--json")
     assert doctor.returncode == 0

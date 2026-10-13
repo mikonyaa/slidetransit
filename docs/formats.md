@@ -1,5 +1,9 @@
 # Formats v1.0
 
+The local 0.1.1rc1 candidate keeps version 1.0 and tightens imported report semantics.
+See [migration notes](migration-0.1.1rc1.md) for valid historical reports, explicit
+native grid coverage, unchanged decision identity and rejection behavior.
+
 Machine schemas live in `src/slidetransit/schemas` and are shipped in wheel resources:
 `manifest.schema.json`, `report.schema.json`, `decisions.schema.json`. They use JSON
 Schema 2020-12, finite JSON numbers, a version field and bounded decision arrays.

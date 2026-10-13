@@ -53,13 +53,20 @@
   function renderPages() {
     const record = pageRecord();
     $("page-label").textContent = `SLIDE ${String(record.page).padStart(2, "0")} / ${report.pages.length}`;
-    const compatible = record.correspondence === "declared-order" && record.reference && record.candidate && Math.abs(record.reference.width - record.candidate.width) < .25 && Math.abs(record.reference.height - record.candidate.height) < .25;
+    const coverage = report.coverage.find(row => row.page === record.page);
+    const compatible = coverage.rasterComparison === "complete";
     $("overlay").disabled = !compatible;
+    $("overlay").title = compatible ? "Overlay the measured native raster grids" : "Raster comparison is unavailable; inspect each export and the available channels.";
     if (!compatible) overlay = false;
     $("overlay").setAttribute("aria-pressed", String(overlay));
     document.querySelector(".opacity").hidden = !overlay;
     $("correspondence").hidden = record.correspondence === "declared-order";
     $("correspondence").textContent = "Unpaired previews. Page correspondence is unresolved; these indexed pages are not asserted to match.";
+    const rasterLabels = {complete:"complete", "unavailable-different-raster-grid":"unavailable: native pixel grids differ", "unavailable-different-page-size":"unavailable: physical page sizes differ", "unavailable-unresolved-correspondence":"unavailable: page correspondence is unresolved"};
+    const channelLimits = ["reference", "candidate"].flatMap(role => ["text", "geometry"].filter(channel => coverage[role][channel] !== "complete").map(channel => `${role} ${channel}: ${coverage[role][channel]}`));
+    const limited = !compatible || channelLimits.length > 0;
+    $("channel-coverage").hidden = !limited;
+    $("channel-coverage").textContent = limited ? `Coverage on this slide is incomplete. Raster comparison ${rasterLabels[coverage.rasterComparison] || "unavailable: page correspondence is unresolved"}. ${channelLimits.join("; ")}${channelLimits.length ? ". " : " "}Acceptance retains these coverage limits.` : "";
     $("pages").className = "pages" + (overlay ? " overlay-mode" : "");
     $("pages").replaceChildren();
     (overlay ? ["reference"] : ["reference", "candidate"]).forEach(role => {

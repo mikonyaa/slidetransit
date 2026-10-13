@@ -6,15 +6,16 @@ The --base-url option repeats checks on the published static sample.
 
 import argparse
 import json
+import shutil
 import subprocess
 from pathlib import Path
 
 from PIL import Image
 from playwright.sync_api import sync_playwright
 
-from slidetransit.limits import DEFAULT_LIMITS
+from slidetransit.limits import DEFAULT_LIMITS, sha256
 from slidetransit.manifest import validate
-from slidetransit.models import fingerprint
+from slidetransit.models import fingerprint, update_summary
 from slidetransit.report import write_report
 
 
@@ -24,9 +25,20 @@ def main():
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--browser-executable")
     parser.add_argument("--base-url")
+    parser.add_argument("--cli", type=Path, help="Installed consumer CLI for downloaded decisions")
+    parser.add_argument(
+        "--incomplete",
+        type=Path,
+        help="An accepted report with an unavailable text/geometry channel",
+    )
+    parser.add_argument(
+        "--grid-report", type=Path, help="Report with unavailable native raster grid comparison"
+    )
     args = parser.parse_args()
-    args.out.mkdir(parents=True, exist_ok=True)
+    args.out.mkdir(parents=True)
     demo = args.demo.resolve()
+    cli = str(args.cli.resolve()) if args.cli else "slidetransit"
+    original_hashes = {str(p.relative_to(demo)): sha256(p) for p in demo.rglob("*") if p.is_file()}
     target = args.base_url or (demo / "clipped/report.html").as_uri()
     events, checks, frames = [], [], []
     with sync_playwright() as playwright:
@@ -35,6 +47,11 @@ def main():
             options["executable_path"] = args.browser_executable
         browser = playwright.chromium.launch(**options)
         context = browser.new_context(accept_downloads=True)
+        if not args.base_url:
+            context.set_offline(True)
+        context.add_init_script("""for (const name of ['localStorage','sessionStorage','indexedDB']) {
+          Object.defineProperty(window, name, {get(){throw new Error('Persistent storage disabled for QA');}});
+        }""")
         page = context.new_page()
         page.on("pageerror", lambda error: events.append(str(error)))
         requests = []
@@ -45,6 +62,10 @@ def main():
             page.get_by_role("heading", name="An export changed.").wait_for()
             page.evaluate("document.fonts.ready")
             assert page.locator(".finding.selected").inner_text().find("Possible clipping") >= 0
+            assert page.locator(".crops img").count() == 2
+            assert page.locator(".crops img").evaluate_all(
+                "images => images.every(i => i.complete && i.naturalWidth > 0)"
+            )
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
             page.screenshot(path=str(args.out / f"report-{width}.png"), full_page=True)
             if width == 390:
@@ -88,7 +109,7 @@ def main():
         assert len(data["decisions"]) == 1 and "author" not in data["decisions"][0]
         result = subprocess.run(
             [
-                "slidetransit",
+                cli,
                 "apply-review",
                 "--report",
                 str(demo / "clipped/report.json"),
@@ -124,7 +145,7 @@ def main():
         download.value.save_as(region_path)
         result = subprocess.run(
             [
-                "slidetransit",
+                cli,
                 "apply-review",
                 "--report",
                 str(demo / "clipped/report.json"),
@@ -181,20 +202,39 @@ def main():
             page.screenshot(path=str(frame))
             frames.append(frame)
         # Synthetic UI stress/error/hostile-text fixtures are explicitly QA-only.
-        stress = json.loads((demo / "clipped/report.json").read_text())
+        stress_root = args.out / "qa-stress"
+        shutil.copytree(demo / "clipped", stress_root)
+        stress = json.loads((stress_root / "report.json").read_text())
         originals = stress["findings"]
         stress["findings"] = []
         for index in range(180):
             f = dict(originals[index % len(originals)])
-            f["id"] = fingerprint(index)[:24]
             f["title"] = f"QA stress {index}: " + "Long finding name with Unicode 東京 " * 5
             f["evidence"] = {
-                "observed": "</script><script>window.hostileExecuted=1</script><img src=x onerror=alert(1)>"
+                "observed": "</script><script>window.hostileExecuted=1</script><img src=x onerror=alert(1)>",
+                "qaOnlyIndex": index,
             }
+            f["id"] = fingerprint(
+                {
+                    key: f[key]
+                    for key in [
+                        "ruleId",
+                        "ruleVersion",
+                        "page",
+                        "referenceBBox",
+                        "candidateBBox",
+                        "evidence",
+                    ]
+                }
+            )[:24]
             stress["findings"].append(f)
-        stress["summary"]["findings"] = 180
-        write_report(stress, demo / "clipped", DEFAULT_LIMITS)
-        page.goto((demo / "clipped/report.html").as_uri())
+        update_summary(stress)
+        stress["limitations"].append(
+            "Synthetic QA-only viewer stress entries; not new measurements or Office exports."
+        )
+        (stress_root / "report.json").write_text(json.dumps(stress))
+        write_report(stress, stress_root, DEFAULT_LIMITS)
+        page.goto((stress_root / "report.html").as_uri())
         assert page.locator(".finding").count() == 180
         assert not page.evaluate("Boolean(window.hostileExecuted)")
         assert "</script>" in page.locator("#detail pre").inner_text()
@@ -202,20 +242,70 @@ def main():
             page.set_viewport_size({"width": width, "height": 1000})
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
             page.screenshot(path=str(args.out / f"stress-{width}.png"), full_page=True)
-        # Restore the genuine report immediately, never publish stress fixtures.
-        genuine = json.loads((demo / "clipped/report.json").read_text())
-        write_report(genuine, demo / "clipped", DEFAULT_LIMITS)
-        error = json.loads((demo / "repeat/report.json").read_text())
-        error["analysisStatus"] = "error"
-        write_report(error, demo / "repeat", DEFAULT_LIMITS)
-        page.goto((demo / "repeat/report.html").as_uri())
-        assert page.get_by_role("heading", name="Analysis needs attention.").count() == 1
-        write_report(
-            json.loads((demo / "repeat/report.json").read_text()), demo / "repeat", DEFAULT_LIMITS
+        invalid_root = args.out / "qa-invalid-import"
+        shutil.copytree(demo / "repeat", invalid_root)
+        invalid = json.loads((invalid_root / "report.json").read_text())
+        invalid["coverage"].pop()
+        (invalid_root / "report.json").write_text(json.dumps(invalid))
+        empty = {
+            "schemaVersion": "1.0",
+            **{k: invalid[k] for k in ["comparisonId", "inputs", "rules", "renderer"]},
+            "decisions": [],
+        }
+        (invalid_root / "decisions.json").write_text(json.dumps(empty))
+        rejected = subprocess.run(
+            [
+                cli,
+                "apply-review",
+                "--report",
+                str(invalid_root.resolve() / "report.json"),
+                "--decisions",
+                str(invalid_root.resolve() / "decisions.json"),
+                "--out",
+                str(args.out.resolve() / "rejected-import"),
+                "--json",
+                "--no-open",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=180,
         )
+        assert rejected.returncode == 2 and "coverage" in json.loads(rejected.stdout)["message"]
+        assert not (args.out / "rejected-import").exists()
+        (args.out / "rejected-import.stdout.json").write_text(rejected.stdout)
         checks.append(
-            "180 long Unicode findings; empty and error states; hostile text inert under offline CSP"
+            "180 long Unicode findings; empty state; hostile text inert; malformed import rejected with JSON/exit 2 and no bundle"
         )
+        for name, source in [("incomplete", args.incomplete), ("raster-grid", args.grid_report)]:
+            if source is None:
+                continue
+            for width in [1440, 1024, 390]:
+                page.set_viewport_size({"width": width, "height": 1000})
+                page.goto(source.resolve().as_uri())
+                assert page.locator("#status").inner_text() == "Analysis incomplete"
+                if name == "incomplete":
+                    page.get_by_role("button", name="Slide 02").click()
+                    assert (
+                        "candidate text: unavailable"
+                        in page.locator("#channel-coverage").inner_text()
+                    )
+                    assert page.locator("#channel-coverage").is_visible()
+                else:
+                    assert (
+                        "native pixel grids differ"
+                        in page.locator("#channel-coverage").inner_text()
+                    )
+                    assert page.locator("#overlay").is_disabled()
+                    page.locator("#inspection").focus()
+                    page.keyboard.press("o")
+                    assert page.locator(".overlay-image").count() == 0
+                    assert page.locator(".pane img").count() == 2
+                assert page.evaluate("document.documentElement.scrollWidth <= innerWidth")
+                page.evaluate("document.fonts.ready")
+                page.screenshot(path=str(args.out / f"{name}-{width}.png"), full_page=True)
+            checks.append(
+                f"{name}: explicit unavailable channels retained at 1440/1024/390px; no false clear or incompatible overlay"
+            )
         external = [u for u in requests if u.startswith(("http:", "https:"))]
         if not args.base_url:
             assert external == [], external
@@ -229,6 +319,13 @@ def main():
                     "checks": checks,
                     "pageErrors": events,
                     "remoteRequests": len(external),
+                    "networkDisabled": not bool(args.base_url),
+                    "persistentStorageDisabled": True,
+                    "consumerDemoUnchanged": original_hashes
+                    == {
+                        str(p.relative_to(demo)): sha256(p) for p in demo.rglob("*") if p.is_file()
+                    },
+                    "cli": cli,
                 },
                 indent=2,
             )
@@ -236,6 +333,9 @@ def main():
         )
         context.close()
         browser.close()
+    assert original_hashes == {
+        str(p.relative_to(demo)): sha256(p) for p in demo.rglob("*") if p.is_file()
+    }
     # A 25-second GIF made only from genuine browser screenshots.
     opened = [Image.open(p).convert("RGB").resize((1008, 700)) for p in frames]
     opened[0].save(
